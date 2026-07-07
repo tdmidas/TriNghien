@@ -1,0 +1,21 @@
+# GPU passthrough override. Requires:
+#   - NVIDIA GPU driver on the host (Windows: latest Game Ready/Studio driver)
+#   - Docker Desktop with WSL2 backend + NVIDIA Container Toolkit (GPU support)
+#
+# Run with:
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
+#
+# This makes the host GPU (e.g. RTX 5050) visible inside the backend container,
+# so /api/system reports it and experiments can select it as the runtime device.
+services:
+  backend:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility

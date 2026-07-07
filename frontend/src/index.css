@@ -1,0 +1,81 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-white text-neutral-800 antialiased;
+}
+
+/* Thin gold scrollbars */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gold-200 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gold-300;
+}
+
+/* Markdown prose */
+.prose-report h1 { @apply text-2xl font-bold mt-2 mb-4 text-neutral-900; }
+.prose-report h2 { @apply text-xl font-semibold mt-6 mb-3 text-neutral-900 border-b border-gold-100 pb-1; }
+.prose-report h3 { @apply text-base font-semibold mt-4 mb-2 text-gold-700; }
+.prose-report p { @apply my-2 leading-relaxed; }
+.prose-report ul { @apply list-disc pl-6 my-2; }
+.prose-report ol { @apply list-decimal pl-6 my-2; }
+.prose-report code { @apply font-mono text-sm bg-gold-50 text-gold-800 px-1 py-0.5 rounded; }
+.prose-report pre { @apply bg-neutral-900 text-neutral-100 rounded-lg p-3 overflow-x-auto my-3; }
+.prose-report pre code { @apply bg-transparent text-neutral-100 p-0; }
+.prose-report table { @apply border-collapse my-3 text-sm w-full; }
+.prose-report th { @apply bg-gold-50 text-gold-800 font-semibold border border-gold-200 px-3 py-1.5 text-left; }
+.prose-report td { @apply border border-neutral-200 px-3 py-1.5; }
+.prose-report a { @apply text-gold-600 underline; }
+.prose-report blockquote { @apply border-l-4 border-gold-300 pl-3 italic text-neutral-600 my-2; }
+
+/* Paper-style (booktabs) tables: horizontal rules only, serif, bold header.
+   Higher specificity (class + table) overrides the grid-style .prose-report rules. */
+.paper-tables table {
+  border-collapse: collapse;
+  margin: 1.1rem 0;
+  width: auto;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.92rem;
+  color: #111827;
+}
+.paper-tables table thead th {
+  border: 0;
+  border-top: 2px solid #111827;      /* \toprule */
+  border-bottom: 1px solid #111827;   /* \midrule */
+  background: transparent;
+  padding: 6px 16px;
+  font-weight: 700;
+  text-align: left;
+}
+.paper-tables table tbody td {
+  border: 0;
+  padding: 5px 16px;
+}
+.paper-tables table tbody tr:last-child td {
+  border-bottom: 2px solid #111827;   /* \bottomrule */
+}
+/* right-align numeric-looking cells (everything except the first column) */
+.paper-tables table td:not(:first-child),
+.paper-tables table th:not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.paper-tables h3 { @apply text-sm font-semibold text-neutral-700 mt-5 mb-1; }

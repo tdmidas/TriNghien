@@ -1,0 +1,18 @@
+# Python
+backend/.venv/
+__pycache__/
+*.pyc
+backend/data/*.db
+backend/data/uploads/
+backend/data/*.log
+backend/.env
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Generated experiment repos
+workspace/
+
+# Reference clones (large)
+papers/

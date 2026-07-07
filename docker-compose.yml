@@ -1,0 +1,25 @@
+services:
+  backend:
+    build: ./backend
+    env_file:
+      - ./backend/.env          # OPENROUTER_API_KEY and other settings
+    environment:
+      WORKSPACE_DIR: /workspace
+    volumes:
+      - workspace:/workspace    # generated experiment repos (persisted)
+      - backend_data:/app/data  # SQLite db + uploads (persisted)
+    ports:
+      - "8000:8000"             # direct API access (optional; frontend proxies too)
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"               # open http://localhost:5173
+    restart: unless-stopped
+
+volumes:
+  workspace:
+  backend_data:
