@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../api.js";
-import { Badge, Button, Card, Icon, Logo, Spinner, formatDuration, runElapsed } from "./ui.jsx";
+import { Badge, Button, Card, Icon, Logo, Spinner, VERIFIER_URL, formatDuration, runElapsed } from "./ui.jsx";
 import ModelPicker from "./ModelPicker.jsx";
 import DatasetPicker from "./DatasetPicker.jsx";
 
@@ -77,14 +77,25 @@ export default function Home({ onOpen }) {
     <div className="min-h-full bg-gradient-to-b from-gold-50/50 to-white">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
         <Logo />
-        <a
-          href="https://openrouter.ai/models"
-          target="_blank"
-          rel="noreferrer"
-          className="text-xs text-neutral-400 hover:text-gold-600"
-        >
-          Powered by OpenRouter
-        </a>
+        <div className="flex items-center gap-4">
+          <a
+            href={VERIFIER_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 rounded-full border border-gold-300 bg-gold-50 px-3 py-1 text-xs font-semibold text-gold-700 hover:bg-gold-100"
+            title="Kiểm tra references.bib của bạn: dán/upload → verify → export bản đã sửa"
+          >
+            🔎 Verify References
+          </a>
+          <a
+            href="https://openrouter.ai/models"
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs text-neutral-400 hover:text-gold-600"
+          >
+            Powered by OpenRouter
+          </a>
+        </div>
       </header>
 
       <main className="mx-auto max-w-3xl px-6 pb-24">

@@ -113,3 +113,7 @@ export function Icon({ name, className = "h-4 w-4" }) {
     </svg>
   );
 }
+
+// Standalone citation-verifier UI (paste/upload a .bib, verify, export).
+// Override with VITE_VERIFIER_URL when the service runs elsewhere.
+export const VERIFIER_URL = import.meta.env.VITE_VERIFIER_URL || "http://localhost:3200";

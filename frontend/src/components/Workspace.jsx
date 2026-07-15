@@ -8,7 +8,7 @@ import "highlight.js/styles/github-dark.css";
 // Solidity isn't in highlight.js core — register it (for Blockchain Security .sol files).
 if (!hljs.getLanguage("solidity")) hljs.registerLanguage("solidity", solidity);
 import { api, streamEvents } from "../api.js";
-import { Badge, Button, Card, Icon, Logo, Spinner, formatDuration, runElapsed } from "./ui.jsx";
+import { Badge, Button, Card, Icon, Logo, Spinner, VERIFIER_URL, formatDuration, runElapsed } from "./ui.jsx";
 
 const STAGES = [
   ["intake", "Refine Idea"],
@@ -100,6 +100,15 @@ export default function Workspace({ projectId, onHome }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <a
+            href={VERIFIER_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-full border border-gold-300 bg-gold-50 px-2.5 py-0.5 text-[11px] font-semibold text-gold-700 hover:bg-gold-100"
+            title="Kiểm tra references.bib của bạn: dán/upload → verify → export bản đã sửa"
+          >
+            🔎 Verify References
+          </a>
           {project?.mode && <ModeBadge mode={project.mode} />}
           {elapsed != null && (
             <span className="flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-600" title="Thời gian chạy">

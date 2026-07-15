@@ -27,8 +27,8 @@ services:
     build: ./citation-verifier
     env_file:
       - ./backend/.env          # reuses CUSTOM_API_KEY / CUSTOM_API_BASE_URL / CUSTOM_API_MODEL
-    # Internal-only: the backend reaches it over the compose network; no host
-    # port is published on purpose (keyless academic APIs + LLM budget).
+    ports:
+      - "3200:3200"             # standalone verify UI — the "Verify References" navbar link
     restart: unless-stopped
 
 volumes:
