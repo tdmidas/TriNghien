@@ -17,6 +17,11 @@ Thiết kế tổng hợp từ 5 repo tham khảo (đã clone trong [papers/](pa
 ```
 [1] Intake      → refine ý tưởng theo topic đã chọn (sinh 3 framing, chọn 1 — generate-then-select)
 [2] Literature  → arXiv search (query decomposition) → related-work notes + citations
+[2b] Verify Cit → mỗi paper từ Literature được POST sang service citation-verifier
+                  (4 tầng: DOI handle+Crossref → arXiv → title search Crossref/OpenAlex/S2 →
+                  DBLP/venue/URL) → verdict VERIFIED/MISMATCH/NOT_FOUND/UNVERIFIABLE per paper
+                  + giải thích tiếng Việt (LLM, degrade khi thiếu key); NOT_FOUND → citation_alert
+                  event → banner đỏ trên UI. Fail-soft: verifier sập → UNVERIFIABLE, pipeline không dừng.
 [3] Dataset     → upload (CSV/JSON/JSONL) hoặc search & chọn từ HuggingFace (preview rows)
 [4] RQs         → sinh N research questions (mặc định 3), mỗi RQ: hypothesis, sub-experiments,
                   metrics, rubric score (novelty/feasibility/interest)

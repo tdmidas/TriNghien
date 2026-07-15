@@ -12,15 +12,21 @@ HKUDS/Auto-Deep-Research.
 ## Kiến trúc
 
 ```
-backend/    FastAPI + SQLite (aiosqlite) + SSE tracking + OpenRouter client
-frontend/   React + Vite + Tailwind (theme trắng chủ đạo + vàng đậm)
+backend/           FastAPI + SQLite (aiosqlite) + SSE tracking + OpenRouter client
+frontend/          React + Vite + Tailwind (theme trắng chủ đạo + vàng đậm)
+citation-verifier/ Next.js sidecar: xác minh trích dẫn qua DOI.org/Crossref/OpenAlex/
+                   Semantic Scholar/arXiv/DBLP (chống citation ảo giác)
 workspace/  repo thực nghiệm do AI sinh cho từng project (xem/tải trên UI)
 papers/     5 repo tham khảo đã clone
 PIPELINE.md thiết kế pipeline chi tiết
 ```
 
-Pipeline 8 stage: **Refine Idea → Literature Review → Research Questions → Experiment Plan →
-Generate Code → Validate Code → Run Experiments → Results & Report**. Mỗi stage stream event
+Pipeline 9 stage: **Refine Idea → Literature Review → Verify Citations → Research Questions →
+Experiment Plan → Generate Code → Validate Code → Run Experiments → Results & Report**.
+Stage **Verify Citations** gửi từng paper của Literature sang service `citation-verifier`
+(4 tầng kiểm chứng: DOI handle → arXiv → title search → DBLP/venue/URL) — verdict
+`VERIFIED / MISMATCH / NOT_FOUND / UNVERIFIABLE` per paper; paper `NOT_FOUND` bật
+**banner cảnh báo đỏ** trên Workspace. Mỗi stage stream event
 realtime lên UI (timeline, live log, cây file repo, bảng kết quả).
 
 ## Cách nhanh nhất: Docker (khuyến nghị)
@@ -73,7 +79,7 @@ Chọn ở màn hình đầu:
 
 ### Các agent trong pipeline
 
-8 agent theo stage: **Idea Agent → Literature Agent → Research Question Agent → Planner Agent → Coding Agent → Reviewer Agent → Experiment Runner Agent → Analysis & Writing Agent**, cộng **Advisor Agent** (chẩn đoán lỗi) trong vòng sửa code. Agent nào đang chạy hiển thị live trên thanh Môi trường và trong Live log.
+9 agent theo stage: **Idea Agent → Literature Agent → Citation Verifier Agent → Research Question Agent → Planner Agent → Coding Agent → Reviewer Agent → Experiment Runner Agent → Analysis & Writing Agent**, cộng **Advisor Agent** (chẩn đoán lỗi) trong vòng sửa code. Agent nào đang chạy hiển thị live trên thanh Môi trường và trong Live log.
 
 ---
 
@@ -120,6 +126,13 @@ Mở `http://localhost:5173`. Vite proxy `/api` sang backend `:8000`.
 
 ```
 OPENROUTER_API_KEY=sk-or-v1-...
+
+# Citation verifier (tùy chọn — để trống vẫn verify được, chỉ mất phần giải thích AI)
+CUSTOM_API_KEY=
+CUSTOM_API_BASE_URL=https://riyckji.abc-tunnel.us/v1
+CUSTOM_API_MODEL=cx/gpt-5.5
+# Chạy không Docker: trỏ tới verifier chạy local (cd citation-verifier && npm i && npm run dev)
+CITATION_VERIFIER_URL=http://127.0.0.1:3200
 ```
 
 ## Cách dùng

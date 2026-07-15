@@ -10,7 +10,9 @@ PROJECT_ROOT = BACKEND_DIR.parent
 load_dotenv(BACKEND_DIR / ".env")
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+# Overridable so any OpenAI-compatible gateway (self-hosted proxy, LiteLLM,
+# vLLM...) can serve the pipeline instead of openrouter.ai.
+OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 APP_URL = os.getenv("APP_URL", "http://localhost:8000")
 APP_NAME = os.getenv("APP_NAME", "AI Researcher")
 
@@ -41,3 +43,10 @@ SANDBOX_MAX_PROCS = int(os.getenv("SANDBOX_MAX_PROCS", "256"))
 
 # Default model used when the client does not specify one.
 DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "qwen/qwen3-coder:free")
+
+# --- citation verification sidecar (see citation-verifier/) ---
+# Verifies every literature paper against DOI.org/Crossref/OpenAlex/Semantic
+# Scholar/arXiv/DBLP; docker-compose points this at the internal service.
+CITATION_VERIFIER_URL = os.getenv("CITATION_VERIFIER_URL", "http://127.0.0.1:3200")
+# Per-entry budget: verifier route caps itself at ~20s (pipeline + LLM).
+CITATION_VERIFY_TIMEOUT = int(os.getenv("CITATION_VERIFY_TIMEOUT", "25"))

@@ -21,6 +21,7 @@ from . import stages, tables
 STAGES = [
     ("intake", "Refine Idea"),
     ("literature", "Literature Review"),
+    ("verify_citations", "Verify Citations"),
     ("research_questions", "Research Questions"),
     ("plan", "Experiment Plan"),
     ("codegen", "Generate Code"),
@@ -33,6 +34,7 @@ STAGES = [
 AGENTS = {
     "intake": "Idea Agent",
     "literature": "Literature Agent",
+    "verify_citations": "Citation Verifier Agent",
     "research_questions": "Research Question Agent",
     "plan": "Planner Agent",
     "codegen": "Coding Agent",
@@ -152,6 +154,12 @@ async def _run(pid: str, n_rqs: int, start_from: str | None, mode: str) -> None:
                 res["_refined_idea"] = art["intake"]["refined_idea"]
                 await db.update_project(pid, time.time(), literature=res,
                                         bibtex=res.get("bibtex", ""))
+            elif key == "verify_citations":
+                res = await stages.stage_verify_citations(project, art["literature"])
+                # stored inside the literature artifact: no schema migration,
+                # and a literature re-run naturally invalidates old verdicts
+                art["literature"]["verification"] = res
+                await db.update_project(pid, time.time(), literature=art["literature"])
             elif key == "research_questions":
                 res = await stages.stage_research_questions(project, art["intake"], art["literature"], n_rqs)
                 art["rqs"] = res

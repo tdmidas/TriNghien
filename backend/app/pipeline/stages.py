@@ -166,6 +166,90 @@ async def stage_literature(project: dict, intake: dict) -> dict:
     return result
 
 
+# ------------------------------------------- stage 2b: verify citations
+def _paper_to_entry(paper: dict) -> dict:
+    """Map a literature paper dict onto the verifier's bare ParsedEntry body."""
+    year = None
+    if str(paper.get("year", "")).isdigit():
+        year = int(paper["year"])
+    entry = {
+        "key": paper.get("bib_key") or "ref",
+        "type": "article",
+        "title": paper.get("title") or None,
+        "authors": paper.get("authors") or [],
+        "year": year,
+        "arxivId": paper.get("arxiv_id") or None,
+        "url": paper.get("url") or None,
+    }
+    return {k: v for k, v in entry.items() if v is not None}
+
+
+async def stage_verify_citations(project: dict, literature: dict) -> dict:
+    """Verify every literature paper via the citation-verifier sidecar
+    (POST /api/verify-entry per paper). Fail-soft: a verifier outage never
+    breaks the pipeline — affected papers become UNVERIFIABLE. Papers flagged
+    NOT_FOUND raise a citation_alert event for the UI banner.
+    """
+    from ..config import CITATION_VERIFIER_URL, CITATION_VERIFY_TIMEOUT
+
+    pid = project["id"]
+    papers = literature.get("papers") or []
+    results: list[dict] = []
+    sem = asyncio.Semaphore(4)  # mirrors the verifier UI's own client pool
+
+    async def verify_one(paper: dict) -> dict:
+        slim = {
+            "bib_key": paper.get("bib_key", ""),
+            "title": paper.get("title", ""),
+            "url": paper.get("url", ""),
+        }
+        try:
+            async with sem:
+                async with httpx.AsyncClient(timeout=CITATION_VERIFY_TIMEOUT) as client:
+                    r = await client.post(f"{CITATION_VERIFIER_URL}/api/verify-entry",
+                                          json=_paper_to_entry(paper))
+                    r.raise_for_status()
+                    body = r.json()
+            best = (body.get("evidence") or {}).get("bestMatch") or {}
+            record = best.get("record") or {}
+            return {**slim,
+                    "verdict": body.get("verdict", "UNVERIFIABLE"),
+                    "explanation": body.get("explanation", ""),
+                    "matched_source": record.get("source", ""),
+                    "matched_doi": record.get("doi", "")}
+        except (httpx.HTTPError, ValueError) as e:
+            return {**slim, "verdict": "UNVERIFIABLE",
+                    "explanation": f"Verifier unreachable: {type(e).__name__}",
+                    "matched_source": "", "matched_doi": ""}
+
+    for coro in asyncio.as_completed([verify_one(p) for p in papers]):
+        r = await coro
+        results.append(r)
+        await publish(pid, "stage_update", {"stage": "verify_citations", "result": r,
+                                            "done": len(results), "total": len(papers)})
+
+    # keep the original paper order for stable UI rendering
+    order = {p.get("bib_key", ""): i for i, p in enumerate(papers)}
+    results.sort(key=lambda r: order.get(r["bib_key"], 99))
+
+    counts: dict[str, int] = {}
+    for r in results:
+        counts[r["verdict"]] = counts.get(r["verdict"], 0) + 1
+    not_found = [r for r in results if r["verdict"] == "NOT_FOUND"]
+    if not_found:
+        await publish(pid, "citation_alert", {
+            "count": len(not_found),
+            "papers": [{"bib_key": r["bib_key"], "title": r["title"],
+                        "explanation": r["explanation"]} for r in not_found],
+            "message": f"{len(not_found)} citation(s) look hallucinated (NOT_FOUND)",
+        })
+
+    verification = {"results": results, "counts": counts}
+    await publish(pid, "stage_update", {"stage": "verify_citations",
+                                        "verification": verification})
+    return verification
+
+
 # --------------------------------------------------------- stage 3: research Qs
 async def stage_research_questions(project: dict, intake: dict, literature: dict, n_rqs: int,
                                    feedback: str = "") -> dict:
