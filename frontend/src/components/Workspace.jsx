@@ -13,6 +13,7 @@ import { Badge, Button, Card, Icon, Logo, Spinner, formatDuration, runElapsed } 
 const STAGES = [
   ["intake", "Refine Idea"],
   ["literature", "Literature Review"],
+  ["verify_citations", "Verify Citations"],
   ["research_questions", "Research Questions"],
   ["plan", "Experiment Plan"],
   ["codegen", "Generate Code"],
@@ -126,6 +127,9 @@ export default function Workspace({ projectId, onHome }) {
       {waiting && project?.pending_action && (
         <GatePanel action={project.pending_action} onResolve={resolveGate} />
       )}
+
+      {/* Hallucinated-citation alert (NOT_FOUND papers from Verify Citations) */}
+      <CitationAlertBanner events={events} />
 
       {/* Tabs */}
       <nav className="flex gap-1 border-b border-neutral-200 bg-white px-4">
@@ -473,6 +477,44 @@ function GatePanel({ action, onResolve }) {
   );
 }
 
+/* ====================== CITATION ALERT (NOT_FOUND) ====================== */
+// Prominent red banner listing papers the Verify Citations stage flagged as
+// likely hallucinated. Derived from the latest citation_alert event; a fresh
+// verify run (stage_start) supersedes older alerts. Dismissible per alert.
+function CitationAlertBanner({ events }) {
+  const [dismissedId, setDismissedId] = useState(0);
+  const alert = useMemo(() => {
+    let latest = null;
+    for (const ev of events) {
+      if (ev.kind === "citation_alert") latest = ev;
+      // a re-run of the stage invalidates the previous alert
+      if (ev.kind === "stage_start" && ev.data?.stage === "verify_citations" && latest) latest = null;
+    }
+    return latest;
+  }, [events]);
+  if (!alert || alert.id === dismissedId) return null;
+  const papers = alert.data?.papers || [];
+  return (
+    <div className="border-b-2 border-red-300 bg-red-50 px-4 py-3">
+      <div className="mb-1 flex items-center justify-between">
+        <div className="text-sm font-semibold text-red-700">
+          ⚠ {alert.data?.count || papers.length} trích dẫn nghi là ảo giác (NOT_FOUND) — kiểm tra trước khi dùng trong paper
+        </div>
+        <button onClick={() => setDismissedId(alert.id)}
+                className="text-xs text-red-400 hover:text-red-700">đóng</button>
+      </div>
+      <ul className="space-y-1">
+        {papers.map((p) => (
+          <li key={p.bib_key} className="text-xs text-red-800">
+            <span className="font-mono font-semibold">[{p.bib_key}]</span> {p.title}
+            {p.explanation && <span className="text-red-600"> — {p.explanation}</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /* ============================== TRACKING ============================== */
 function Tracking({ events, stageState, onRerunFrom, running }) {
   return (
@@ -545,7 +587,7 @@ function StageDot({ state }) {
 function LogConsole({ events }) {
   const ref = useRef();
   const [filter, setFilter] = useState("");
-  const logs = events.filter((e) => ["log", "stage_start", "stage_done", "stage_update", "run_progress", "file_written", "pipeline_error", "pipeline_done", "agent_start", "agent_stop", "gate", "gate_resolved", "pipeline_stopped", "token_usage"].includes(e.kind));
+  const logs = events.filter((e) => ["log", "stage_start", "stage_done", "stage_update", "run_progress", "file_written", "pipeline_error", "pipeline_done", "agent_start", "agent_stop", "gate", "gate_resolved", "pipeline_stopped", "token_usage", "citation_alert"].includes(e.kind));
   useEffect(() => {
     ref.current?.scrollTo({ top: ref.current.scrollHeight });
   }, [logs.length]);
@@ -620,6 +662,20 @@ function LogLine({ ev }) {
     return <div className="mt-1 text-red-400">{t} ✗ PIPELINE ERROR: {ev.data.error}</div>;
   if (ev.kind === "pipeline_done")
     return <div className="mt-1 text-emerald-400">{t} ✅ PIPELINE HOÀN TẤT</div>;
+  if (ev.kind === "stage_update" && ev.data.stage === "verify_citations" && ev.data.result) {
+    const r = ev.data.result;
+    const color = r.verdict === "VERIFIED" ? "text-emerald-400"
+      : r.verdict === "NOT_FOUND" ? "text-red-400"
+      : r.verdict === "MISMATCH" ? "text-amber-300" : "text-neutral-400";
+    return (
+      <div className={color}>
+        {t} 🔎 [{ev.data.done}/{ev.data.total}] {r.bib_key}: {r.verdict}
+        {r.matched_source ? ` (via ${r.matched_source})` : ""}
+      </div>
+    );
+  }
+  if (ev.kind === "citation_alert")
+    return <div className="mt-1 text-red-400">{t} ⚠ CITATION ALERT: {ev.data.message}</div>;
   if (ev.kind === "stage_update" && ev.data.status)
     return <div className="text-neutral-400">{t} · {ev.data.stage}: {ev.data.status} {ev.data.file || ev.data.run || ""}</div>;
   return null;
