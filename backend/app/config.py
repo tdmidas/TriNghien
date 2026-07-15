@@ -10,7 +10,9 @@ PROJECT_ROOT = BACKEND_DIR.parent
 load_dotenv(BACKEND_DIR / ".env")
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+# Overridable so any OpenAI-compatible gateway (self-hosted proxy, LiteLLM,
+# vLLM...) can serve the pipeline instead of openrouter.ai.
+OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 APP_URL = os.getenv("APP_URL", "http://localhost:8000")
 APP_NAME = os.getenv("APP_NAME", "AI Researcher")
 
